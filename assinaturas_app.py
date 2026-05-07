@@ -255,32 +255,7 @@ with col_export:
         help="Baixa a tabela atualizada num formato leve e fácil de abrir no Excel para compartilhar."
     )
 
-# =======================
-# GRÁFICOS E DETALHES
-# =======================
-# Recalcula custos normalizados com o dataframe editado para os gráficos
-edited_df["Custo_Mensal_Calc"] = edited_df.apply(calc_mensal, axis=1)
 
-st.subheader("📈 Análise Gráfica", divider="blue")
-col_graf1, col_graf2 = st.columns(2)
-
-with col_graf1:
-    st.markdown("**Gastos Mensais por Empresa / Conta**")
-    custo_por_empresa = edited_df.groupby("Empresa/Conta")["Custo_Mensal_Calc"].sum().reset_index()
-    if not custo_por_empresa.empty:
-        st.bar_chart(custo_por_empresa.set_index("Empresa/Conta"), color="#1E88E5")
-    else:
-        st.info("Sem dados para exibir.")
-
-with col_graf2:
-    st.markdown("**Top 5 Assinaturas Mais Caras (Custo Mensal Equivalente)**")
-    top_5 = edited_df.nlargest(5, "Custo_Mensal_Calc")[["Serviço", "Custo_Mensal_Calc"]]
-    if not top_5.empty:
-        st.bar_chart(top_5.set_index("Serviço"), color="#FF8A65")
-    else:
-        st.info("Sem dados para exibir.")
-
-st.divider()
 
 # =======================
 # VISUALIZAÇÃO DOS PRÓS E CONTRAS (CARDS)
