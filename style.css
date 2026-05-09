@@ -1,0 +1,344 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* GLOBAL THEME */
+:root {
+    --bg-main: #0B0F19;
+    --bg-card: rgba(15, 23, 42, 0.72);
+    --bg-card-hover: rgba(30, 41, 59, 0.85);
+    --text-primary: #F1F5F9;
+    --text-secondary: #94A3B8;
+    --accent-blue: #3B82F6;
+    --accent-green: #10B981;
+    --accent-yellow: #F59E0B;
+    --accent-red: #EF4444;
+    --accent-purple: #8B5CF6;
+    --border-color: rgba(255, 255, 255, 0.05);
+    --font-family: 'Inter', sans-serif;
+    --border-radius: 16px;
+}
+
+/* Base App Overrides */
+.stApp {
+    background-color: var(--bg-main) !important;
+    font-family: var(--font-family) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Hide default streamlit elements */
+header[data-testid="stHeader"] {
+    display: none;
+}
+footer {
+    display: none;
+}
+.stDeployButton {
+    display: none;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-family) !important;
+    color: var(--text-primary) !important;
+}
+
+h1 {
+    font-size: 2.2rem !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.02em !important;
+    margin-bottom: 0.5rem !important;
+}
+
+h2 {
+    font-size: 1.5rem !important;
+    font-weight: 600 !important;
+    margin-top: 2rem !important;
+    margin-bottom: 1rem !important;
+    letter-spacing: -0.01em !important;
+}
+
+p, span, div {
+    font-family: var(--font-family);
+}
+
+.text-muted {
+    color: var(--text-secondary) !important;
+    font-size: 0.9rem !important;
+}
+
+/* KPI Cards */
+.kpi-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.kpi-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    background-color: var(--bg-card-hover);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.kpi-title {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.kpi-value {
+    color: var(--text-primary);
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.kpi-subtext {
+    color: var(--accent-green);
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.kpi-subtext.warning { color: var(--accent-yellow); }
+.kpi-subtext.danger { color: var(--accent-red); }
+
+/* SaaS List View (Table Rows) */
+.list-row {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: all 0.2s ease;
+}
+
+.list-row:hover {
+    background-color: var(--bg-card-hover);
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: translateX(4px);
+}
+
+/* Badges */
+.badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.badge-green { background-color: rgba(16, 185, 129, 0.15); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.2); }
+.badge-yellow { background-color: rgba(245, 158, 11, 0.15); color: #FBBF24; border: 1px solid rgba(245, 158, 11, 0.2); }
+.badge-red { background-color: rgba(239, 68, 68, 0.15); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+.badge-purple { background-color: rgba(139, 92, 246, 0.15); color: #A78BFA; border: 1px solid rgba(139, 92, 246, 0.2); }
+.badge-gray { background-color: rgba(148, 163, 184, 0.15); color: #94A3B8; border: 1px solid rgba(148, 163, 184, 0.2); }
+
+/* Customizing Streamlit Widgets */
+div[data-testid="stSelectbox"] label {
+    font-size: 0.85rem !important;
+    color: var(--text-secondary) !important;
+}
+
+div[data-testid="stTextInput"] label {
+    font-size: 0.85rem !important;
+    color: var(--text-secondary) !important;
+}
+
+button[data-testid="baseButton-primary"] {
+    background-color: var(--accent-blue) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease !important;
+}
+
+button[data-testid="baseButton-primary"]:hover {
+    background-color: #2563EB !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Service Info Structure inside Markdown */
+.service-name {
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: var(--text-primary);
+    margin-bottom: 0.2rem;
+}
+
+.service-meta {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.cost-highlight {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+.cost-freq {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+/* Smart Insight Card */
+.smart-insight-card {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    border-radius: var(--border-radius);
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    margin-top: 2rem;
+}
+
+.smart-insight-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.smart-insight-content h4 {
+    margin: 0 0 0.25rem 0 !important;
+    font-size: 1rem !important;
+    color: var(--text-primary) !important;
+    font-weight: 600 !important;
+}
+
+.smart-insight-content p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+/* ==================================
+   DRAWER UI (CONTEXTUAL PANEL)
+   ================================== */
+.drawer-panel {
+    background-color: rgba(15, 23, 42, 0.92) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-left: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    padding: 2rem;
+    height: 100%;
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.35);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.drawer-header {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.drawer-section-title {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.drawer-decision-box {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    padding: 1rem;
+    border-left: 3px solid var(--accent-blue);
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.drawer-ai-box {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(59, 130, 246, 0.1) 100%);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 8px;
+    padding: 1rem;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    color: #E2E8F0;
+    position: relative;
+    overflow: hidden;
+}
+
+.drawer-ai-box::before {
+    content: "✨ AI Recommendation";
+    display: block;
+    font-size: 0.75rem;
+    color: #A78BFA;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.4rem;
+}
+
+.pros-cons-box {
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    height: 100%;
+}
+
+.pros-cons-box.pros {
+    border-top: 2px solid var(--accent-green);
+}
+
+.pros-cons-box.cons {
+    border-top: 2px solid var(--accent-yellow);
+}
+
+.pros-cons-list {
+    margin: 0;
+    padding-left: 1.2rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.pros-cons-list li {
+    margin-bottom: 0.4rem;
+}
+
+.strategic-score {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid var(--border-color);
+}
+
+.score-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.btn-open-drawer {
+    display: block;
+    width: 100%;
+}

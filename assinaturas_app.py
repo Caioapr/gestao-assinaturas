@@ -2,6 +2,11 @@ import streamlit as st
 import pandas as pd
 import os
 from decimal import Decimal
+import plotly.express as px
+import plotly.graph_objects as go
+from datetime import datetime
+import textwrap
+import urllib.parse
 
 # Configuração da página - DEVE SER A PRIMEIRA CHAMADA DO STREAMLIT
 st.set_page_config(page_title="Gestão de Assinaturas", page_icon="📊", layout="wide")
@@ -186,8 +191,15 @@ def calc_anual(row):
 # Inicializa o arquivo se não existir
 init_data()
 
-st.title("📊 Painel de Gestão Centralizada de Assinaturas")
-st.markdown("Aplicação avançada baseada na análise de prós/contras para gestão do plano corporativo.")
+# =======================
+# INJECT CUSTOM CSS
+# =======================
+def local_css(file_name):
+    if os.path.exists(file_name):
+        with open(file_name) as f:
+            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+
+local_css("style.css")
 
 # Carregar os dados
 df = load_data()
@@ -196,84 +208,241 @@ df = load_data()
 df["Custo_Mensal_Calc"] = df.apply(calc_mensal, axis=1)
 df["Custo_Anual_Calc"] = df.apply(calc_anual, axis=1)
 
-# =======================
-# MÉTRICAS E RESUMO
-# =======================
 total_mensal = df["Custo_Mensal_Calc"].sum()
 projecao_anual = df["Custo_Anual_Calc"].sum()
-
-# Economia potencial: assinaturas com ação de Cancelar, Não Renovar ou Avaliar
-acoes_corte = ["Cancelar", "Não Renovar", "Avaliar"]
+acoes_corte = ["Cancelar", "Não Renovar", "Avaliar", "Em Revisão"]
 economia_df = df[df["Ação"].isin(acoes_corte)]
 economia_mensal = economia_df["Custo_Mensal_Calc"].sum()
 
-st.subheader("Resumo Financeiro Atual", divider="blue")
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("Custo Total Mensal (Equivalente)", fmt_brl(total_mensal))
-col2.metric("Projeção Anual Total", fmt_brl(projecao_anual))
-col3.metric("Economia Potencial / Mês", fmt_brl(economia_mensal),
-            delta=f"- {fmt_brl(economia_mensal)}", delta_color="inverse")
-col4.metric("Qtd. de Assinaturas", f"{len(df)} ativas")
+ativas = len(df[df["Ação"] == "Manter"])
+total_subs = len(df)
 
 # =======================
-# TABELA EDITÁVEL (ESTILO EXCEL)
+# HERO SECTION
 # =======================
-st.subheader("📝 Tabela Completa: Prós, Contras e Decisões", divider="blue")
-st.markdown("Analise os pontos fortes e fracos de cada assinatura. Clique duas vezes em qualquer campo para editar.")
-
-edited_df = st.data_editor(
-    df[COLUNAS],
-    num_rows="dynamic",
-    use_container_width=True,
-    height=500,
-    column_config={
-        "Serviço": st.column_config.TextColumn("Serviço", required=True, width="medium"),
-        "Empresa/Conta": st.column_config.SelectboxColumn("Conta", options=["PV Móveis", "Grupo Paluto", "V4 Company", "Geral/Outro"], required=True, width="medium"),
-        "Custo (R$)": st.column_config.NumberColumn("Custo (R$)", format="R$ %.2f", min_value=0.0, step=0.01, width="small"),
-        "Frequência": st.column_config.SelectboxColumn("Frequência", options=["Mensal", "Anual"], required=True, width="small"),
-        "Tags": st.column_config.TextColumn("Tags/Categoria", width="small"),
-        "Prós": st.column_config.TextColumn("Prós (+)", width="large"),
-        "Contras": st.column_config.TextColumn("Contras (-)", width="large"),
-        "Ação": st.column_config.SelectboxColumn("Ação", options=ACOES, required=True, width="small"),
-        "Decisão": st.column_config.TextColumn("Decisão Final", width="large"),
-    },
-    column_order=COLUNAS
-)
-
-col_save, col_export = st.columns([1, 2])
-with col_save:
-    if st.button("💾 Salvar Alterações no Excel", type="primary"):
-        save_data(edited_df)
-        st.success("Alterações salvas com sucesso em 'assinaturas_v4.xlsx'!")
-        st.rerun()
-with col_export:
-    st.download_button(
-        label="📥 Baixar Relatório (CSV)",
-        data=edited_df.to_csv(index=False, sep=';', decimal=',').encode("utf-8-sig"),
-        file_name="relatorio_gestao_assinaturas.csv",
-        mime="text/csv",
-        help="Baixa a tabela atualizada num formato leve e fácil de abrir no Excel para compartilhar."
-    )
-
-
+st.markdown("<h1 style='margin-bottom: 2.5rem;'>Gestão de Assinaturas</h1>", unsafe_allow_html=True)
 
 # =======================
-# VISUALIZAÇÃO DOS PRÓS E CONTRAS (CARDS)
+# KPI CARDS
 # =======================
-st.subheader("🔍 Resumo Executivo das Contas em Revisão/Cancelamento")
-st.markdown("Um foco detalhado nas assinaturas que exigem atenção imediata.")
+kpi_html = f"""
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 3rem;">
+    <div class="kpi-card">
+        <div class="kpi-title">Gasto Mensal Total</div>
+        <div class="kpi-value">{fmt_brl(total_mensal)}</div>
+        <div class="kpi-subtext">Comprometido este mês</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-title">Projeção Anual</div>
+        <div class="kpi-value">{fmt_brl(projecao_anual)}</div>
+        <div class="kpi-subtext">Impacto financeiro a longo prazo</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-title">Economia Potencial</div>
+        <div class="kpi-value">{fmt_brl(economia_mensal)}</div>
+        <div class="kpi-subtext warning">Em revisão / cancelamento</div>
+    </div>
+</div>
+"""
+st.markdown(kpi_html, unsafe_allow_html=True)
 
-revisar_df = edited_df[edited_df["Ação"].isin(["Cancelar", "Avaliar", "Não Renovar", "Migrar"])]
-if not revisar_df.empty:
-    for index, row in revisar_df.iterrows():
-        with st.expander(f"⚠️ {row['Serviço']} ({row['Empresa/Conta']}) - Ação: {row['Ação']}", expanded=True):
-            col_pro, col_con = st.columns(2)
-            with col_pro:
-                st.success(f"**Prós:**\n{row['Prós']}")
-            with col_con:
-                st.error(f"**Contras:**\n{row['Contras']}")
-            st.info(f"**Decisão:** {row['Decisão']}")
+# =======================
+# FILTER & ACTION BAR
+# =======================
+col_search, col_filter, col_toggle = st.columns([2, 2, 1])
+with col_search:
+    search_query = st.text_input("Buscar assinatura...", placeholder="Ex: Spotify, Google...")
+with col_filter:
+    status_filter = st.selectbox("Filtrar por Status", ["Todos"] + ACOES)
+with col_toggle:
+    st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True) # spacer
+    edit_mode = st.toggle("Modo Edição (Planilha)")
+    show_list = st.toggle("Mostrar Lista", value=True)
+
+# Aplicar filtros
+filtered_df = df.copy()
+if search_query:
+    filtered_df = filtered_df[filtered_df["Serviço"].str.contains(search_query, case=False, na=False) | filtered_df["Tags"].str.contains(search_query, case=False, na=False)]
+if status_filter != "Todos":
+    filtered_df = filtered_df[filtered_df["Ação"] == status_filter]
+
+# =======================
+# MAIN TABLE / LIST VIEW
+# =======================
+st.markdown("<h2 style='margin-top:0; margin-bottom: 1rem;'>Workspace de Assinaturas</h2>", unsafe_allow_html=True)
+
+def get_badge_class(acao):
+    if acao == "Manter": return "badge-green"
+    if acao == "Cancelar" or acao == "Não Renovar": return "badge-red"
+    if acao == "Avaliar" or acao == "Em Revisão": return "badge-yellow"
+    if acao == "Migrar": return "badge-purple"
+    return "badge-gray"
+
+if show_list:
+    if edit_mode:
+        st.info("Modo de edição ativado. Alterações feitas na tabela abaixo podem ser salvas.", icon="✏️")
+        edited_df = st.data_editor(
+            df[COLUNAS], # Mostra todos para edição, não apenas os filtrados, para evitar bugs de index
+            num_rows="dynamic",
+            width="stretch",
+            height=500,
+            column_config={
+                "Serviço": st.column_config.TextColumn("Serviço", required=True),
+                "Empresa/Conta": st.column_config.SelectboxColumn("Conta", options=["PV Móveis", "Grupo Paluto", "V4 Company", "Geral/Outro"]),
+                "Custo (R$)": st.column_config.NumberColumn("Custo (R$)", format="R$ %.2f", min_value=0.0, step=0.01),
+                "Frequência": st.column_config.SelectboxColumn("Frequência", options=["Mensal", "Anual"]),
+                "Ação": st.column_config.SelectboxColumn("Ação", options=ACOES),
+            }
+        )
+        
+        col_save, col_export = st.columns([1, 2])
+        with col_save:
+            if st.button("💾 Salvar Alterações", type="primary"):
+                save_data(edited_df)
+                st.success("Alterações salvas!")
+                st.rerun()
+        with col_export:
+            st.download_button(label="📥 Baixar CSV", data=edited_df.to_csv(index=False, sep=';', decimal=',').encode("utf-8-sig"), file_name="assinaturas.csv", mime="text/csv")
+    else:
+        # Premium List View
+        if filtered_df.empty:
+            st.markdown("<div class='list-row' style='justify-content:center; color:var(--text-secondary);'>Nenhuma assinatura encontrada.</div>", unsafe_allow_html=True)
+        else:
+            # Header Row (Visual only)
+            header_html = """
+            <div style="display: flex; padding: 0 1.5rem 0.5rem 1.5rem; color: var(--text-secondary); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-color); margin-bottom: 1rem;">
+                <div style="flex: 2;">Serviço & Categoria</div>
+                <div style="flex: 1;">Status</div>
+                <div style="flex: 1;">Frequência</div>
+                <div style="flex: 1; text-align: right;">Custo</div>
+            </div>
+            """
+            st.markdown("".join(line.strip() for line in header_html.split('\n')), unsafe_allow_html=True)
+
+            for _, row in filtered_df.iterrows():
+                badge_cls = get_badge_class(row['Ação'])
+                tags_display = row['Tags'] if pd.notna(row['Tags']) and row['Tags'] else row['Empresa/Conta']
+                
+                freq_display = f"/{row['Frequência'].lower()[:3]}"
+                custo_display = fmt_brl(row['Custo (R$)'])
+
+                row_html = f"""
+                <div class="list-row">
+                    <div style="flex: 2; display: flex; align-items: center; gap: 1rem;">
+                        <div style="width: 40px; height: 40px; border-radius: 8px; background: #2D3748; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 1.2rem;">
+                            {str(row['Serviço'])[0]}
+                        </div>
+                        <div>
+                            <div class="service-name">{row['Serviço']}</div>
+                            <div class="service-meta">{tags_display}</div>
+                        </div>
+                    </div>
+                    <div style="flex: 1;">
+                        <span class="badge {badge_cls}">{row['Ação']}</span>
+                    </div>
+                    <div style="flex: 1; color: var(--text-secondary); font-size: 0.9rem;">
+                        {row['Frequência']}
+                    </div>
+                    <div style="flex: 1; text-align: right;">
+                        <div class="cost-highlight">{custo_display}</div>
+                        <div class="cost-freq">{freq_display}</div>
+                    </div>
+                </div>
+                """
+                st.markdown("".join(line.strip() for line in row_html.split('\n')), unsafe_allow_html=True)
 else:
-    st.success("Não há assinaturas pendentes para revisar ou cancelar!")
+    st.info("A lista de assinaturas está oculta. Ative 'Mostrar Lista' acima para visualizar.", icon="👁️")
 
-st.caption("Os dados são salvos localmente em `assinaturas_v4.xlsx` e podem ser abertos no Excel a qualquer momento.")
+# =======================
+# ANALYTICS SECTION
+# =======================
+st.markdown("<h2 style='margin-top: 3rem !important;'>Analytics & Insights</h2>", unsafe_allow_html=True)
+
+view_annual = st.toggle("📊 Visualizar Valores Anuais")
+value_col = "Custo_Anual_Calc" if view_annual else "Custo_Mensal_Calc"
+y_axis_title = "Custo Anual (R$)" if view_annual else "Custo Mensal (R$)"
+
+col_chart1, col_chart2 = st.columns(2)
+
+with col_chart1:
+    with st.container(border=True):
+        st.markdown("<h4 style='text-align: center; margin-top:0; color:var(--text-secondary); font-size:0.9rem; text-transform:uppercase;'>Account Allocation</h4>", unsafe_allow_html=True)
+        
+        df_conta = df.groupby("Empresa/Conta")[value_col].sum().reset_index()
+        colors = ['#4F46E5', '#10B981', '#F59E0B', '#6366F1']
+        
+        fig1 = go.Figure()
+        
+        total_spend = df_conta[value_col].sum()
+        total_str = f"R$ {total_spend:,.0f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        
+        fig1.add_trace(go.Pie(
+            labels=df_conta['Empresa/Conta'],
+            values=df_conta[value_col],
+            hole=0.75,
+            marker_colors=colors,
+            textinfo='none',
+            hovertemplate="<b>%{label}</b><br>R$ %{value:,.2f} (%{percent})<extra></extra>",
+            sort=False,
+            showlegend=False
+        ))
+        
+        fig1.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)', 
+            plot_bgcolor='rgba(0,0,0,0)',
+            font_color='#E2E8F0',
+            margin=dict(t=20, b=20, l=20, r=20),
+            showlegend=False,
+            annotations=[dict(
+                text=f"<span style='font-size:24px; font-weight:700;'>{total_str}</span><br><span style='font-size:12px; color:#94A3B8;'>{'Anual' if view_annual else 'Mensal'}</span>",
+                x=0.5, y=0.5, font_size=20, showarrow=False
+            )]
+        )
+        st.plotly_chart(fig1, width="stretch")
+
+with col_chart2:
+    with st.container(border=True):
+        st.markdown("<h4 style='text-align: center; margin-top:0; color:var(--text-secondary); font-size:0.9rem; text-transform:uppercase;'>Top Active Subscriptions</h4>", unsafe_allow_html=True)
+        
+        df_servico = df.groupby(["Serviço", "Empresa/Conta"])[value_col].sum().reset_index()
+        df_servico = df_servico.sort_values(by=value_col, ascending=True)
+        
+        # Salva a ordem original das empresas para que as cores não mudem
+        original_company_order = df_servico['Empresa/Conta'].drop_duplicates().tolist()
+        
+        # Remove itens com custo 0 (ex: Canva)
+        df_servico = df_servico[df_servico[value_col] > 0]
+        
+        fig2 = px.bar(df_servico, y='Serviço', x=value_col, 
+                      color='Empresa/Conta',
+                      orientation='h',
+                      category_orders={"Empresa/Conta": original_company_order},
+                      color_discrete_sequence=['#4F46E5', '#10B981', '#F59E0B', '#6366F1'])
+        
+        fig2.update_traces(hovertemplate="<b>%{y}</b><br>%{data.name}<br>R$ %{x:,.2f}<extra></extra>")
+        
+        fig2.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)', 
+            plot_bgcolor='rgba(0,0,0,0)',
+            font_color='#E2E8F0',
+            margin=dict(t=20, b=20, l=10, r=20),
+            showlegend=False,
+            xaxis=dict(showgrid=False, visible=False),
+            yaxis=dict(showgrid=False, title="")
+        )
+        st.plotly_chart(fig2, width="stretch")
+
+# =======================
+# INSIGHTS (SMART UX)
+# =======================
+if economia_mensal > 0:
+    insight_html = f"""
+    <div class="smart-insight-card">
+        <div class="smart-insight-icon">✨</div>
+        <div class="smart-insight-content">
+            <h4>Smart Insight</h4>
+            <p>Você pode economizar até <b>{fmt_brl(economia_mensal)}/mês</b> ao revisar as {len(economia_df)} assinaturas que precisam de atenção.</p>
+        </div>
+    </div>
+    """
+    st.markdown(insight_html, unsafe_allow_html=True)
