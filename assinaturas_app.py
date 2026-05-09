@@ -256,7 +256,7 @@ with col_filter:
     status_filter = st.selectbox("Filtrar por Status", ["Todos"] + ACOES)
 with col_toggle:
     st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True) # spacer
-    edit_mode = st.toggle("Modo Edição (Planilha)")
+    edit_mode = False # Desabilitado para produção (apenas leitura)
     show_list = st.toggle("Mostrar Lista", value=True)
 
 # Aplicar filtros
