@@ -362,30 +362,36 @@ view_annual = st.toggle("📊 Visualizar Valores Anuais")
 value_col = "Custo_Anual_Calc" if view_annual else "Custo_Mensal_Calc"
 y_axis_title = "Custo Anual (R$)" if view_annual else "Custo Mensal (R$)"
 
+color_map = {
+    "V4 Company": "#4F46E5",   # Blue
+    "PV Móveis": "#10B981",    # Green
+    "Grupo Paluto": "#F59E0B", # Orange
+    "Geral/Outro": "#6366F1"
+}
+
 col_chart1, col_chart2 = st.columns(2)
 
 with col_chart1:
     with st.container(border=True):
-        st.markdown("<h4 style='text-align: center; margin-top:0; color:var(--text-secondary); font-size:0.9rem; text-transform:uppercase;'>Account Allocation</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='text-align: center; margin-top:0; color:var(--text-secondary); font-size:0.9rem; text-transform:uppercase;'>Assinaturas por Empresa</h4>", unsafe_allow_html=True)
         
         df_conta = df.groupby("Empresa/Conta")[value_col].sum().reset_index()
-        colors = ['#4F46E5', '#10B981', '#F59E0B', '#6366F1']
-        
-        fig1 = go.Figure()
         
         total_spend = df_conta[value_col].sum()
         total_str = f"R$ {total_spend:,.0f}".replace(",", "X").replace(".", ",").replace("X", ".")
         
-        fig1.add_trace(go.Pie(
-            labels=df_conta['Empresa/Conta'],
-            values=df_conta[value_col],
-            hole=0.75,
-            marker_colors=colors,
+        fig1 = px.pie(df_conta, 
+                      names='Empresa/Conta', 
+                      values=value_col, 
+                      hole=0.75,
+                      color='Empresa/Conta',
+                      color_discrete_map=color_map)
+        
+        fig1.update_traces(
             textinfo='none',
             hovertemplate="<b>%{label}</b><br>R$ %{value:,.2f} (%{percent})<extra></extra>",
-            sort=False,
-            showlegend=False
-        ))
+            sort=False
+        )
         
         fig1.update_layout(
             paper_bgcolor='rgba(0,0,0,0)', 
@@ -402,13 +408,10 @@ with col_chart1:
 
 with col_chart2:
     with st.container(border=True):
-        st.markdown("<h4 style='text-align: center; margin-top:0; color:var(--text-secondary); font-size:0.9rem; text-transform:uppercase;'>Top Active Subscriptions</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='text-align: center; margin-top:0; color:var(--text-secondary); font-size:0.9rem; text-transform:uppercase;'>Assinaturas por Empresa</h4>", unsafe_allow_html=True)
         
         df_servico = df.groupby(["Serviço", "Empresa/Conta"])[value_col].sum().reset_index()
         df_servico = df_servico.sort_values(by=value_col, ascending=True)
-        
-        # Salva a ordem original das empresas para que as cores não mudem
-        original_company_order = df_servico['Empresa/Conta'].drop_duplicates().tolist()
         
         # Remove itens com custo 0 (ex: Canva)
         df_servico = df_servico[df_servico[value_col] > 0]
@@ -416,10 +419,13 @@ with col_chart2:
         fig2 = px.bar(df_servico, y='Serviço', x=value_col, 
                       color='Empresa/Conta',
                       orientation='h',
-                      category_orders={"Empresa/Conta": original_company_order},
-                      color_discrete_sequence=['#4F46E5', '#10B981', '#F59E0B', '#6366F1'])
+                      category_orders={"Empresa/Conta": ["Grupo Paluto", "PV Móveis", "V4 Company", "Geral/Outro"]},
+                      color_discrete_map=color_map)
         
-        fig2.update_traces(hovertemplate="<b>%{y}</b><br>%{data.name}<br>R$ %{x:,.2f}<extra></extra>")
+        fig2.update_traces(
+            hovertemplate="<b>%{y}</b><br>%{data.name}<br>R$ %{x:,.2f}<extra></extra>",
+            marker=dict(cornerradius=2)
+        )
         
         fig2.update_layout(
             paper_bgcolor='rgba(0,0,0,0)', 
@@ -427,6 +433,8 @@ with col_chart2:
             font_color='#E2E8F0',
             margin=dict(t=20, b=20, l=10, r=20),
             showlegend=False,
+            bargap=0.7,
+            bargroupgap=0.15,
             xaxis=dict(showgrid=False, visible=False),
             yaxis=dict(showgrid=False, title="")
         )
